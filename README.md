@@ -27,6 +27,11 @@ python ./app.py
 起動すると `localhost:5000` でアクセスすることができます。 
 
 
-## 4. Reference（参考文献）
-> [!note]
-> 工事中です
+## 4. ToDo
+- モデルの予測があまりよろしくないので
+  - 別のデータセットを使う
+  - 高解像度版のモデルを使う
+
+
+## 5. Reference（参考文献）
+- Tu, Zhengzhong, et al. "Maxvit: Multi-axis vision transformer." _European conference on computer vision_. Cham: Springer Nature Switzerland, 2022.
