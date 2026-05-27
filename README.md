@@ -1,6 +1,8 @@
 # AgeGuessr
 [![Static Badge](https://img.shields.io/badge/GitHub-repo-blue?logo=github)](https://github.com/Shimoyama-h26ms419/AgeGuessr) [![Static Badge](https://img.shields.io/badge/Python-v3.14.5-green?logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3145/) [![Static Badge](https://img.shields.io/badge/PyTorch-v2.12.0%2Bcu132-orange?logo=pytorch&logoColor=white)](https://pytorch.org/)
 
+![AgeGuessr Demo](./demo.png)
+
 ## 0. TL;DR
 - 2026年度 弘前大学オープンキャンパスの水田研究室の展示です
 
@@ -16,8 +18,13 @@
 
 
 ## 3. Usage（使い方）
-> [!note]
-> 工事中です
+以下のコマンドで Flask を立ち上げます。
+
+```
+python ./app.py
+```
+
+起動すると `localhost:5000` でアクセスすることができます。 
 
 
 ## 4. Reference（参考文献）
