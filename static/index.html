@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ja" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Insight - UTKFace Demo</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --c-cream:   #dad7cd;
+      --c-sage:    #a3b18a;
+      --c-green:   #588157;
+      --c-forest:  #3a5a40;
+      --c-dark:    #344e41;
+    }
+
+    [data-bs-theme="light"] {
+      --bg-main: var(--c-cream);
+      --bg-card: #ffffff;
+      --text-main: var(--c-dark);
+      --accent: var(--c-green);
+      --accent-strong: var(--c-forest);
+      --border-soft: rgba(58, 90, 64, 0.15);
+    }
+
+    [data-bs-theme="dark"] {
+      --bg-main: #1f2a23;
+      --bg-card: #2a3a30;
+      --text-main: var(--c-cream);
+      --accent: var(--c-sage);
+      --accent-strong: var(--c-sage);
+      --border-soft: rgba(218, 215, 205, 0.15);
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .navbar-custom { background-color: var(--c-dark); }
+    .navbar-custom .navbar-brand,
+    .navbar-custom .nav-link { color: var(--c-cream) !important; }
+    .navbar-custom .nav-link:hover { color: var(--c-sage) !important; }
+    .navbar-brand { font-weight: 700; letter-spacing: 0.5px; }
+
+    .card-custom {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-primary-custom {
+      background-color: var(--c-green);
+      border-color: var(--c-green);
+      color: #fff;
+    }
+    .btn-primary-custom:hover:not(:disabled) {
+      background-color: var(--c-forest);
+      border-color: var(--c-forest);
+      color: #fff;
+    }
+    .btn-primary-custom:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .upload-area {
+      border: 2px dashed var(--c-sage);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+      color: var(--text-main);
+      user-select: none;
+    }
+    .upload-area * { pointer-events: none; } /* ★ 子要素のクリックを親に渡す */
+    .upload-area:hover {
+      background-color: rgba(163, 177, 138, 0.15);
+      border-color: var(--c-green);
+    }
+    .upload-area.dragover {
+      background-color: rgba(88, 129, 87, 0.2);
+      border-color: var(--c-forest);
+    }
+
+    /* ★ hidden属性ではなくCSSで隠す（click()が確実に動く） */
+    .visually-hidden-file {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 360px;
+      border-radius: 12px;
+      object-fit: contain;
+      border: 1px solid var(--border-soft);
+    }
+
+    .result-card {
+      background-color: var(--bg-card);
+      border-left: 4px solid var(--c-green);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .result-label { font-size: 0.85rem; opacity: 0.7; margin-bottom: 0.25rem; }
+    .result-value { font-size: 1.75rem; font-weight: 700; color: var(--accent-strong); }
+    .result-confidence { font-size: 0.9rem; opacity: 0.8; }
+
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background-color: rgba(52, 78, 65, 0.75);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      flex-direction: column;
+      color: #fff;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner-custom {
+      width: 4rem; height: 4rem;
+      border: 6px solid rgba(255, 255, 255, 0.25);
+      border-top-color: var(--c-sage);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; }
+
+    .placeholder-text { opacity: 0.6; text-align: center; padding: 3rem 1rem; }
+
+    .accordion-button { background-color: var(--bg-card); color: var(--text-main); }
+    .accordion-button:not(.collapsed) {
+      background-color: rgba(88, 129, 87, 0.15);
+      color: var(--accent-strong);
+      box-shadow: none;
+    }
+    .accordion-button:focus { box-shadow: 0 0 0 0.2rem rgba(88, 129, 87, 0.25); }
+    .accordion-item { background-color: var(--bg-card); border-color: var(--border-soft); }
+
+    .chart-wrap { position: relative; height: 220px; }
+
+    .theme-toggle-btn {
+      background-color: transparent;
+      border: 1px solid var(--c-cream);
+      color: var(--c-cream);
+      border-radius: 50px;
+      padding: 0.35rem 0.85rem;
+      cursor: pointer;
+    }
+    .theme-toggle-btn:hover {
+      background-color: rgba(218, 215, 205, 0.15);
+      color: var(--c-cream);
+    }
+
+    @media (max-width: 767.98px) {
+      .result-value { font-size: 1.4rem; }
+      .preview-img  { max-height: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+    <div class="container-fluid px-3 px-md-4">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-camera2"></i> AgeGuessr
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+              data-bs-target="#navMenu" aria-controls="navMenu"
+              aria-expanded="false" aria-label="Toggle navigation"
+              style="border-color: var(--c-cream);">
+        <span class="navbar-toggler-icon" style="filter: invert(1) brightness(2);"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navMenu">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="http://water.eit.hirosaki-u.ac.jp/" target="_blank" rel="noopener">
+              <i class="bi bi-mortarboard"></i> 研究室
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/Shimoyama-h26ms419/AgeGuessr" target="_blank" rel="noopener">
+              <i class="bi bi-github"></i> GitHub
+            </a>
+          </li>
+        </ul>
+        <div class="d-flex">
+          <button id="themeToggle" class="theme-toggle-btn" type="button">
+            <i id="themeIcon" class="bi bi-moon-stars-fill"></i>
+            <span id="themeLabel" class="ms-1 d-none d-md-inline">Dark</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div class="row g-4">
+
+      <div class="col-12 col-lg-6">
+        <div class="card-custom p-3 p-md-4 h-100">
+          <h4 class="mb-3"><i class="bi bi-cloud-arrow-up"></i> 写真を選択</h4>
+
+          <div id="uploadArea" class="upload-area mb-3" role="button" tabindex="0">
+            <i class="bi bi-image" style="font-size: 2.5rem;"></i>
+            <p class="mt-2 mb-1">クリックまたはドラッグ＆ドロップ</p>
+            <small class="opacity-75">JPG / PNG / WEBP</small>
+          </div>
+          <!-- ★ hidden属性をやめ、CSSで隠す -->
+          <input type="file" id="fileInput" accept="image/*" class="visually-hidden-file" />
+
+          <div id="previewWrap" class="text-center mb-3 d-none">
+            <img id="previewImg" class="preview-img" alt="preview" />
+          </div>
+
+          <button id="predictBtn" type="button"
+                  class="btn btn-primary-custom w-100" disabled>
+            <i class="bi bi-magic"></i> 予測する
+          </button>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="card-custom p-3 p-md-4 h-100">
+          <h4 class="mb-3"><i class="bi bi-bar-chart-line"></i> 予測結果</h4>
+
+          <div id="placeholder" class="placeholder-text">
+            <i class="bi bi-arrow-left-circle" style="font-size: 2rem;"></i>
+            <p class="mt-2 mb-0">左から写真をアップロードして<br>「予測する」を押してください</p>
+          </div>
+
+          <div id="resultArea" class="d-none">
+            <div class="row g-2">
+              <div class="col-12 col-md-4">
+                <div class="result-card">
+                  <div class="result-label"><i class="bi bi-calendar-event"></i> 年齢</div>
+                  <div id="resAge" class="result-value">-</div>
+                  <div id="resAgeSub" class="result-confidence"></div>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="result-card">
+                  <div class="result-label"><i class="bi bi-gender-ambiguous"></i> 性別</div>
+                  <div id="resGender" class="result-value">-</div>
+                  <div id="resGenderSub" class="result-confidence"></div>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="result-card">
+                  <div class="result-label"><i class="bi bi-globe"></i> 人種</div>
+                  <div id="resRace" class="result-value">-</div>
+                  <div id="resRaceSub" class="result-confidence"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion mt-3" id="detailAccordion">
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#detailBody">
+                    <i class="bi bi-graph-up me-2"></i> 詳細を表示
+                  </button>
+                </h2>
+                <div id="detailBody" class="accordion-collapse collapse"
+                     data-bs-parent="#detailAccordion">
+                  <div class="accordion-body">
+                    <h6 class="mb-2">年齢分布</h6>
+                    <div class="chart-wrap mb-4"><canvas id="chartAge"></canvas></div>
+                    <h6 class="mb-2">性別の確率</h6>
+                    <div class="chart-wrap mb-4"><canvas id="chartGender"></canvas></div>
+                    <h6 class="mb-2">人種の確率</h6>
+                    <div class="chart-wrap"><canvas id="chartRace"></canvas></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner-custom"></div>
+    <div class="loading-text">予測中・・・</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ★ DOM完成後に全イベント登録する
+    document.addEventListener("DOMContentLoaded", () => {
+
+      const html = document.documentElement;
+      const themeToggle = document.getElementById("themeToggle");
+      const themeIcon = document.getElementById("themeIcon");
+      const themeLabel = document.getElementById("themeLabel");
+
+      const uploadArea = document.getElementById("uploadArea");
+      const fileInput  = document.getElementById("fileInput");
+      const previewWrap = document.getElementById("previewWrap");
+      const previewImg = document.getElementById("previewImg");
+      const predictBtn = document.getElementById("predictBtn");
+
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      const placeholder = document.getElementById("placeholder");
+      const resultArea  = document.getElementById("resultArea");
+
+      let currentFile = null;
+      let lastResult = null;
+      const charts = { age: null, gender: null, race: null };
+
+      // ===== Theme toggle =====
+      function applyTheme(mode) {
+        html.setAttribute("data-bs-theme", mode);
+        if (mode === "dark") {
+          themeIcon.className = "bi bi-sun-fill";
+          themeLabel.textContent = "Light";
+        } else {
+          themeIcon.className = "bi bi-moon-stars-fill";
+          themeLabel.textContent = "Dark";
+        }
+        localStorage.setItem("theme", mode);
+        if (lastResult) drawCharts(lastResult);
+      }
+
+      const savedTheme = localStorage.getItem("theme") || "light";
+      applyTheme(savedTheme);
+
+      themeToggle.addEventListener("click", (e) => {
+        e.preventDefault();
+        const current = html.getAttribute("data-bs-theme");
+        applyTheme(current === "dark" ? "light" : "dark");
+      });
+
+      // ===== Upload handling =====
+      uploadArea.addEventListener("click", (e) => {
+        e.preventDefault();
+        fileInput.click();
+      });
+      uploadArea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          fileInput.click();
+        }
+      });
+
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.add("dragover");
+      });
+      uploadArea.addEventListener("dragenter", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.add("dragover");
+      });
+      uploadArea.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove("dragover");
+      });
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove("dragover");
+        if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      // ページ全体にファイルがドロップされたときに、ブラウザの既定動作（画像表示）を抑制
+      ["dragover", "drop"].forEach(evt => {
+        window.addEventListener(evt, (e) => {
+          if (e.target !== uploadArea && !uploadArea.contains(e.target)) {
+            e.preventDefault();
+          }
+        });
+      });
+
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) handleFile(e.target.files[0]);
+      });
+
+      function handleFile(file) {
+        if (!file.type.startsWith("image/")) {
+          alert("画像ファイルを選んでください");
+          return;
+        }
+        currentFile = file;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          previewImg.src = ev.target.result;
+          previewWrap.classList.remove("d-none");
+          predictBtn.disabled = false;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // ===== Predict =====
+      predictBtn.addEventListener("click", async () => {
+        if (!currentFile) return;
+        loadingOverlay.classList.add("show");
+
+        const fd = new FormData();
+        fd.append("image", currentFile);
+
+        try {
+          const res = await fetch("/predict", { method: "POST", body: fd });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || `HTTP ${res.status}`);
+          }
+          const data = await res.json();
+          lastResult = data;
+          renderResult(data);
+        } catch (e) {
+          alert("予測に失敗しました: " + e.message);
+        } finally {
+          loadingOverlay.classList.remove("show");
+        }
+      });
+
+      function renderResult(data) {
+        placeholder.classList.add("d-none");
+        resultArea.classList.remove("d-none");
+
+        document.getElementById("resAge").textContent = data.age.value.toFixed(1) + " 歳";
+        document.getElementById("resAgeSub").textContent = "回帰モデルによる推定値";
+
+        document.getElementById("resGender").textContent = data.gender.label;
+        document.getElementById("resGenderSub").textContent =
+          "確率: " + (data.gender.confidence * 100).toFixed(1) + " %";
+
+        document.getElementById("resRace").textContent = data.race.label;
+        document.getElementById("resRaceSub").textContent =
+          "確率: " + (data.race.confidence * 100).toFixed(1) + " %";
+
+        drawCharts(data);
+      }
+
+      function getThemeColors() {
+        const isDark = html.getAttribute("data-bs-theme") === "dark";
+        return {
+          text: isDark ? "#dad7cd" : "#344e41",
+          grid: isDark ? "rgba(218,215,205,0.15)" : "rgba(58,90,64,0.15)",
+          bar:  isDark ? "#a3b18a" : "#588157",
+          barHi: "#3a5a40",
+        };
+      }
+
+      function makeBarChart(canvasId, labels, data, highlightIndex = -1) {
+        const ctx = document.getElementById(canvasId);
+        const colors = getThemeColors();
+        const bgColors = data.map((_, i) =>
+          i === highlightIndex ? colors.barHi : colors.bar
+        );
+
+        return new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [{
+              label: "確率",
+              data,
+              backgroundColor: bgColors,
+              borderRadius: 6,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: { label: (c) => (c.parsed.y * 100).toFixed(2) + " %" },
+              },
+            },
+            scales: {
+              x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+              y: {
+                beginAtZero: true, max: 1,
+                ticks: {
+                  color: colors.text,
+                  callback: (v) => (v * 100).toFixed(0) + "%",
+                },
+                grid: { color: colors.grid },
+              },
+            },
+          },
+        });
+      }
+
+      function drawCharts(data) {
+        for (const k in charts) {
+          if (charts[k]) { charts[k].destroy(); charts[k] = null; }
+        }
+        const ageIdx  = data.age.probs.indexOf(Math.max(...data.age.probs));
+        const genIdx  = data.gender.probs.indexOf(Math.max(...data.gender.probs));
+        const raceIdx = data.race.probs.indexOf(Math.max(...data.race.probs));
+
+        charts.age    = makeBarChart("chartAge",    data.age.bins,        data.age.probs,    ageIdx);
+        charts.gender = makeBarChart("chartGender", data.gender.classes,  data.gender.probs, genIdx);
+        charts.race   = makeBarChart("chartRace",   data.race.classes,    data.race.probs,   raceIdx);
+      }
+
+    });
+  </script>
+</body>
+</html>
+
