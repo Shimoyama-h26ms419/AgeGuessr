@@ -13,8 +13,40 @@
 
 
 ## 2. Setup（環境構築）
-> [!note]
-> 工事中です
+以下の手順に従って、環境構築を行います。
+
+### 2.1 Pythonのインストール
+1. [**Python公式ページ**](https://www.python.org/downloads/release/python-3145/) から **Python 3.14.5** をインストールします。
+2. `PATH` を通してターミナルから **Python 3.14.5** を起動できることを確認します。
+
+### 2.2 リポジトリのクローン
+ディレクトリは分かりやすい場所ならばどこでも構いません。
+
+```
+git clone https://github.com/Shimoyama-h26ms419/AgeGuessr.git
+```
+
+次に、作業ディレクトリに移動します。
+```
+cd ./AgeGuessr
+```
+
+### 4.3 仮想環境の作成
+仮想環境（venv）の作成を行います。 以下のコマンドで仮想環境を `.venv` ディレクトリに作成します。
+
+```
+py -3.14 -m venv ./.venv 
+```
+
+
+### 4.4 必要ライブラリのインストール
+必要なライブラリなどを一括でインストールします。 以下のコマンドを順に実行してインストールします。
+
+```
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu132
+pip install ipywidgets transformers[torch]
+pip install -r requirements.txt
+```
 
 
 ## 3. Usage（使い方）
