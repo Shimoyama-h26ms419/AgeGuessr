@@ -2,6 +2,7 @@ from pathlib import Path
 from io import BytesIO
 import json
 
+import gdown
 import numpy as np
 import torch
 import torch.nn as nn
@@ -23,6 +24,15 @@ MODEL_NAME = "maxvit_tiny_tf_224"
 IMG_SIZE = 224
 RACE_CLASSES = ["White", "Black", "Asian", "Indian", "Others"]
 GENDER_CLASSES = ["Male", "Female"]
+
+# ===== Google Drive からモデルファイルをダウンロード =====
+FILE_ID = "1T3ypLy3n46L8CYspfmYYBgOxurYOd8gy"
+
+if not Path(MODEL_PATH).exists():
+    print("\033[94mDownloading model...\033[0m")
+    gdown.download(id=FILE_ID, output=str(MODEL_PATH))
+    print("\033[92mModel downloaded\033[0m")
+
 
 # meta.json があればそちらを優先
 if META_PATH.exists():
