@@ -31,7 +31,7 @@ git clone https://github.com/Shimoyama-h26ms419/AgeGuessr.git
 cd ./AgeGuessr
 ```
 
-### 4.3 仮想環境の作成
+### 2.3 仮想環境の作成
 仮想環境（venv）の作成を行います。 以下のコマンドで仮想環境を `.venv` ディレクトリに作成します。
 
 ```
@@ -39,12 +39,20 @@ py -3.14 -m venv ./.venv
 ```
 
 
-### 4.4 必要ライブラリのインストール
-必要なライブラリなどを一括でインストールします。 以下のコマンドを順に実行してインストールします。
+### 2.4 必要ライブラリのインストール
+必要なライブラリなどを一括でインストールします。
+
+機械学習の Jupyter Notebook を利用したい方のみ以下のコマンドを順に実行してインストールします。
 
 ```
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu132
 pip install ipywidgets transformers[torch]
+pip install -r requirements-for-gpu-users.txt
+```
+
+Web アプリのみ利用したい方は以下のコマンドのみを実行します。
+
+```
 pip install -r requirements.txt
 ```
 
@@ -67,5 +75,5 @@ python ./app.py
   - 学習率スケジューラを変更
 
 
-## 5. Reference（参考文献）
+## 5. References（参考文献）
 - Tu, Zhengzhong, et al. "Maxvit: Multi-axis vision transformer." _European conference on computer vision_. Cham: Springer Nature Switzerland, 2022.
